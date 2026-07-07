@@ -1,6 +1,7 @@
 # Data and large weights
 data/
-models/
+/models/
+
 
 # Python caching
 __pycache__/
