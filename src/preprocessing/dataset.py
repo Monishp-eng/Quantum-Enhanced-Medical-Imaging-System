@@ -44,7 +44,7 @@ class BrainTumorDataset(Dataset):
         
         return img, label
 
-def get_dataloaders(data_dir, batch_size=32, num_workers=4, grayscale=True):
+def get_dataloaders(data_dir, batch_size=32, num_workers=0, grayscale=True):
     """
     Factory function returning train, val, and test loaders.
     Implements 70/15/15 stratified split and class-weighted sampling for training.

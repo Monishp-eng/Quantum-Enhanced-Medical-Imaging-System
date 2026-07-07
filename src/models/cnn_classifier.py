@@ -50,6 +50,8 @@ class FineTunedResNet50(nn.Module):
         )
 
     def forward(self, x):
+        if x.shape[1] == 1:
+            x = torch.cat([x, x, x], dim=1)
         x = self.base(x)
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
