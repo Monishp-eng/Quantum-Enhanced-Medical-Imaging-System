@@ -1,0 +1,28 @@
+{
+    "accuracy": 0.28125,
+    "sensitivity_macro": 0.27976190476190477,
+    "sensitivity_per_class": {
+        "glioma": 0.5,
+        "meningioma": 0.2857142857142857,
+        "notumor": 0.3333333333333333,
+        "pituitary": 0.0
+    },
+    "specificity_macro": 0.7649637681159421,
+    "specificity_per_class": {
+        "glioma": 0.625,
+        "meningioma": 0.52,
+        "notumor": 0.9565217391304348,
+        "pituitary": 0.9583333333333334
+    },
+    "precision_macro": 0.3001373626373626,
+    "recall_macro": 0.27976190476190477,
+    "f1_weighted": 0.2667124542124542,
+    "f1_macro": 0.2582417582417582,
+    "auc_roc_macro": 0.5285281875431332,
+    "auc_roc_per_class": {
+        "glioma": 0.640625,
+        "meningioma": 0.3314285714285714,
+        "notumor": 0.7149758454106281,
+        "pituitary": 0.42708333333333337
+    }
+}
