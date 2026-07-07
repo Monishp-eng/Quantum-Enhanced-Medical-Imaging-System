@@ -1,4 +1,4 @@
 Pair,McNemar Stat,p-value,Significant (p < 0.05),Accuracy Improvement (%),Sensitivity Improvement (%),F1 Improvement (%)
-Baseline A vs Quantum A,4.0,0.75390625,False,-8.333333333333332,-8.88742593811718,-6.997929606625266
-Baseline B vs Quantum B,1.0,0.21875,False,-15.384615384615385,-14.95726495726496,-16.843866498370865
+Baseline A vs Quantum A,0.0,1.0,False,-9.090909090909083,-9.090909090909095,-9.114583333333337
+Baseline B vs Quantum B,0.0,0.5,False,-16.666666666666664,-16.666666666666675,-19.64285714285714
 Baseline C vs Quantum C,0.0,1.0,False,0.0,0.0,0.0

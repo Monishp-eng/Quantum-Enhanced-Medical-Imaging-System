@@ -1,0 +1,167 @@
+# =============================================================================
+# QT-2.21 Quantum-Enhanced Medical Imaging System — Configuration
+# =============================================================================
+# This file centralizes all tunable parameters for the pipeline.
+# Modify values here instead of editing source code directly.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Data Pipeline
+# ─────────────────────────────────────────────────────────────────────────────
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  kaggle_dataset: "masoudnickparvar/brain-tumor-mri-dataset"
+  image_size: [224, 224]
+  grayscale: true
+  split_ratios:
+    train: 0.70
+    val: 0.15
+    test: 0.15
+  random_seed: 42
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Preprocessing
+# ─────────────────────────────────────────────────────────────────────────────
+preprocessing:
+  skull_strip: true
+  clahe:
+    clip_limit: 2.0
+    tile_grid_size: [8, 8]
+  denoise:
+    kernel_size: [3, 3]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Data Augmentation (Albumentations)
+# ─────────────────────────────────────────────────────────────────────────────
+augmentation:
+  rotate_limit: 15
+  rotate_prob: 0.8
+  horizontal_flip_prob: 0.5
+  vertical_flip_prob: 0.3
+  brightness_contrast_prob: 0.5
+  elastic_transform:
+    alpha: 1
+    sigma: 50
+    prob: 0.5
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Feature Engineering
+# ─────────────────────────────────────────────────────────────────────────────
+features:
+  cnn_backbone: "resnet50"
+  cnn_feature_dim: 2048
+  handcrafted:
+    glcm_distances: [1]
+    glcm_angles: [0, 0.7854, 1.5708, 2.3562]  # 0, pi/4, pi/2, 3pi/4
+    glcm_dim: 20
+    hog_orientations: 9
+    hog_pixels_per_cell: [112, 112]
+    hog_cells_per_block: [1, 1]
+    hog_dim: 36
+    intensity_dim: 10
+    wavelet: "db1"
+    wavelet_level: 4
+    wavelet_dim: 32
+  total_fused_dim: 2146  # 2048 + 98
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Classical Feature Selection
+# ─────────────────────────────────────────────────────────────────────────────
+classical_feature_selection:
+  mutual_info_k: 100
+  selectkbest_k: 100
+  rfe_n_features: 100
+  rfe_step: 100
+  pca_variance_threshold: 0.95
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Classical Hyperparameter Optimization
+# ─────────────────────────────────────────────────────────────────────────────
+classical_hyperparam:
+  svm_grid:
+    C: [0.1, 1, 10]
+    gamma: ["scale", "auto", 0.01, 0.1]
+  optuna_trials: 25
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Quantum-Inspired Evolutionary Optimization (QIEO)
+# ─────────────────────────────────────────────────────────────────────────────
+qieo:
+  # Feature Selection
+  feature_selection:
+    population_size: 10
+    max_iterations: 15
+    theta_max_factor: 0.05  # theta_max = 0.05 * pi
+    sparsity_penalty: 0.01
+    cv_folds: 3
+  # Hyperparameter Optimization
+  hyperparam:
+    population_size: 8
+    max_iterations: 10
+    bits_per_param: 8
+    n_params: 7
+    total_bits: 56  # 7 * 8
+    cv_folds: 3
+    search_ranges:
+      n_estimators: [50, 550]
+      max_depth: [3, 15]
+      learning_rate: [0.01, 0.30]
+      subsample: [0.5, 1.0]
+      colsample_bytree: [0.5, 1.0]
+      gamma: [0.0, 5.0]
+      min_child_weight: [1, 10]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Model Training
+# ─────────────────────────────────────────────────────────────────────────────
+training:
+  batch_size: 32
+  num_workers: 0  # Set to 0 for Windows compatibility
+  cnn:
+    epochs: 5
+    learning_rate: 0.0001
+    focal_loss_gamma: 2.0
+    scheduler_step: 3
+    scheduler_gamma: 0.1
+  xgboost:
+    objective: "multi:softprob"
+    num_class: 4
+    eval_metric: "mlogloss"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Evaluation
+# ─────────────────────────────────────────────────────────────────────────────
+evaluation:
+  class_names: ["glioma", "meningioma", "notumor", "pituitary"]
+  metrics:
+    - accuracy
+    - sensitivity
+    - specificity
+    - precision
+    - recall
+    - f1_score
+    - auc_roc
+  statistical_test: "mcnemar"
+  significance_level: 0.05
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Explainability (XAI)
+# ─────────────────────────────────────────────────────────────────────────────
+explainability:
+  gradcam:
+    target_layer: "base.7"  # ResNet50 layer4 (last bottleneck block)
+  saliency:
+    method: "vanilla"
+  overlay:
+    colormap: "COLORMAP_JET"  # OpenCV colormap
+    alpha: 0.5
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Output Paths
+# ─────────────────────────────────────────────────────────────────────────────
+output:
+  models_dir: "models"
+  reports_dir: "reports"
+  figures_dir: "reports/figures"
+  results_dir: "reports/results"
+  explainability_dir: "reports/figures/explainability"
