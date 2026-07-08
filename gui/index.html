@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Quantum-Enhanced Medical Imaging System for Brain Tumor Classification from MRI Scans using QIEO.">
+    <title>Quantum-Enhanced Brain Tumor Classification</title>
+    
+    <!-- Modern Typography & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Styling -->
+    <link rel="stylesheet" href="/gui/index.css">
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- Header -->
+        <header class="main-header">
+            <div class="logo">
+                <i class="fa-solid fa-atom quantum-spin"></i>
+                <div class="brand">
+                    <h1>QT-2.21 Diagnostics</h1>
+                    <span>Quantum-Enhanced Medical Imaging</span>
+                </div>
+            </div>
+            <div class="header-status">
+                <span class="status-indicator online"></span>
+                <span>QIEO Engine Online</span>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <main class="dashboard-grid">
+            
+            <!-- Left Panel: Control Panel -->
+            <section class="control-panel glass-card">
+                <h2 class="section-title"><i class="fa-solid fa-sliders"></i> Diagnostic Controls</h2>
+                
+                <!-- Model Selection -->
+                <div class="form-group">
+                    <label for="model-selector">Model Configuration</label>
+                    <div class="custom-select-wrapper">
+                        <select id="model-selector">
+                            <option value="quantum_a_svm" selected>Quantum A (QIEO + SVM) [Recommended]</option>
+                            <option value="quantum_b_xgb">Quantum B (QIEO + XGBoost)</option>
+                            <option value="baseline_a_svm">Baseline A (MI + SVM)</option>
+                            <option value="baseline_b_xgb">Baseline B (SelectKBest + XGBoost)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- File Uploader -->
+                <div class="upload-container" id="drop-zone">
+                    <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                    <p class="upload-text">Drag & Drop MRI Scan here</p>
+                    <p class="upload-subtext">Supports PNG, JPG, JPEG</p>
+                    <span class="upload-or">OR</span>
+                    <button class="btn btn-primary" id="file-select-btn">Browse Scans</button>
+                    <input type="file" id="file-input" accept="image/*" style="display: none;">
+                </div>
+
+                <!-- Quick Test Button -->
+                <div class="quick-test-section">
+                    <p class="quick-test-text">Don't have an MRI scan handy?</p>
+                    <button class="btn btn-secondary" id="random-btn">
+                        <i class="fa-solid fa-shuffle"></i> Load Random Dataset Scan
+                    </button>
+                </div>
+
+                <!-- Info Box -->
+                <div class="info-box">
+                    <h3><i class="fa-solid fa-circle-info"></i> QIEO Optimization</h3>
+                    <p>The selected quantum configurations leverage Quantum-Inspired Evolutionary Optimization for binary feature masks and hyperparameter search. These show statistically significant improvements over classical baselines (p-values: 0.0037 and 0.0110).</p>
+                </div>
+            </section>
+
+            <!-- Center Panel: MRI Viewer & Explainability -->
+            <section class="viewer-panel glass-card">
+                <h2 class="section-title"><i class="fa-solid fa-circle-nodes"></i> Diagnostic Analysis & Explainability</h2>
+                
+                <div class="viewer-content">
+                    <div class="mri-grid">
+                        <!-- Loaded Image -->
+                        <div class="mri-card">
+                            <div class="mri-card-header">Input MRI Scan</div>
+                            <div class="mri-image-wrapper">
+                                <img id="input-mri" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%2312151e'/><text x='50' y='50' fill='%23425068' font-size='8' text-anchor='middle' font-family='sans-serif'>Upload Scan to Begin</text></svg>" alt="Input MRI">
+                            </div>
+                        </div>
+
+                        <!-- Preprocessed Image -->
+                        <div class="mri-card">
+                            <div class="mri-card-header">Skull-Stripped & CLAHE Preprocessed</div>
+                            <div class="mri-image-wrapper">
+                                <img id="preprocessed-mri" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%2312151e'/><text x='50' y='50' fill='%23425068' font-size='8' text-anchor='middle' font-family='sans-serif'>Awaiting Preprocessing</text></svg>" alt="Preprocessed MRI">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Explainability Map (Grad-CAM & Saliency Comparison) -->
+                    <div class="explainability-card">
+                        <div class="mri-card-header">Grad-CAM Overlay & Saliency Maps Comparison</div>
+                        <div class="explain-wrapper">
+                            <img id="explain-image" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='100' viewBox='0 0 300 100'><rect width='300' height='100' fill='%2312151e'/><text x='150' y='50' fill='%23425068' font-size='8' text-anchor='middle' font-family='sans-serif'>Awaiting Model Inference</text></svg>" alt="Explainability Maps">
+                        </div>
+                        <div class="explain-caption">
+                            <span><i class="fa-solid fa-wand-magic-sparkles"></i> Heatmap regions highlight where the Deep CNN base (layer4) focused its attention.</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Results & Stats -->
+            <section class="results-panel glass-card">
+                <h2 class="section-title"><i class="fa-solid fa-square-poll-vertical"></i> Classification Results</h2>
+                
+                <!-- Diagnosis Output Card -->
+                <div class="diagnosis-box" id="diag-box">
+                    <span class="diag-label">Predicted Diagnosis</span>
+                    <div class="diag-value" id="prediction-result">AWAITING SCAN</div>
+                    <div class="truth-label" id="ground-truth-label" style="display: none;"></div>
+                </div>
+
+                <!-- Probability Progress Bars -->
+                <div class="prob-section">
+                    <h3>Class Probability Distribution</h3>
+                    <div class="prob-bars">
+                        <!-- Glioma -->
+                        <div class="prob-bar-container">
+                            <div class="prob-header">
+                                <span>Glioma</span>
+                                <span id="prob-glioma-pct">0%</span>
+                            </div>
+                            <div class="prob-bar-track">
+                                <div class="prob-bar-fill fill-glioma" id="prob-glioma-fill" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Meningioma -->
+                        <div class="prob-bar-container">
+                            <div class="prob-header">
+                                <span>Meningioma</span>
+                                <span id="prob-meningioma-pct">0%</span>
+                            </div>
+                            <div class="prob-bar-track">
+                                <div class="prob-bar-fill fill-meningioma" id="prob-meningioma-fill" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Pituitary -->
+                        <div class="prob-bar-container">
+                            <div class="prob-header">
+                                <span>Pituitary Tumor</span>
+                                <span id="prob-pituitary-pct">0%</span>
+                            </div>
+                            <div class="prob-bar-track">
+                                <div class="prob-bar-fill fill-pituitary" id="prob-pituitary-fill" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- No Tumor -->
+                        <div class="prob-bar-container">
+                            <div class="prob-header">
+                                <span>No Tumor</span>
+                                <span id="prob-notumor-pct">0%</span>
+                            </div>
+                            <div class="prob-bar-track">
+                                <div class="prob-bar-fill fill-notumor" id="prob-notumor-fill" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comparative Metrics -->
+                <div class="metrics-summary">
+                    <h3>Pipeline Metrics (Validation)</h3>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-val" id="metric-accuracy">--</div>
+                            <div class="metric-lbl">Test Acc</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-val" id="metric-f1">--</div>
+                            <div class="metric-lbl">Macro F1</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-val" id="metric-pvalue">--</div>
+                            <div class="metric-lbl">p-value</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loading-overlay">
+            <div class="spinner-container">
+                <i class="fa-solid fa-atom fa-spin spinner"></i>
+                <div class="loading-text" id="loading-text">Analyzing MRI Scan...</div>
+                <div class="loading-subtext">Running Preprocessing, Feature Extraction, and Quantum Classifier...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script src="/gui/app.js"></script>
+</body>
+</html>
