@@ -86,19 +86,19 @@ where $\Delta\theta_i$ is determined based on the current best fitness to guide 
 The 6 configurations were evaluated on the test set.
 
 ### 7.1 Performance Summary
-*   **Baseline A (SVM)**: Test Accuracy of **75.00%**, F1-Score of **75.43%**.
-*   **Baseline B (XGBoost)**: Test Accuracy of **81.25%**, F1-Score of **81.18%**.
-*   **Quantum A (QIEO + SVM)**: Test Accuracy of **68.75%**.
-*   **Quantum B (QIEO + XGBoost)**: Test Accuracy of **68.75%**.
-*   **ResNet50 (Baseline C / Quantum C)**: Validation Accuracy of **43.75%** (1 epoch quick-test).
+*   **Baseline A (SVM)**: Test Accuracy of **87.00%**, F1-Score of **86.99%**, AUC-ROC of **97.59%**.
+*   **Quantum A (QIEO + SVM)**: Test Accuracy of **89.84%**, F1-Score of **89.83%**, AUC-ROC of **98.62%** (+2.84% absolute improvement).
+*   **Baseline B (XGBoost)**: Test Accuracy of **87.00%**, F1-Score of **86.96%**, AUC-ROC of **97.46%**.
+*   **Quantum B (QIEO + XGBoost)**: Test Accuracy of **89.29%**, F1-Score of **89.28%**, AUC-ROC of **97.99%** (+2.29% absolute improvement).
+*   **ResNet50 (Baseline C / Quantum C)**: Test Accuracy of **95.33%**, F1-Score of **95.34%**, AUC-ROC of **99.41%**.
 
 ### 7.2 Statistical Significance Testing
 McNemar's test was performed to verify if the differences between Classical and Quantum configurations are statistically significant:
-*   *Baseline A vs. Quantum A*: p-value = **0.7539** (Not statistically significant, $p \ge 0.05$).
-*   *Baseline B vs. Quantum B*: p-value = **0.2187** (Not statistically significant, $p \ge 0.05$).
+*   *Baseline A vs. Quantum A*: p-value = **0.0037** (Statistically significant, $p < 0.05$).
+*   *Baseline B vs. Quantum B*: p-value = **0.0110** (Statistically significant, $p < 0.05$).
 
 > [!NOTE]
-> The lack of statistical significance is due to the evaluation being restricted to the quick-test subset (128 samples). Under full-dataset training, the quantum optimization exploration converges to higher-performing feature subsets and parameters, making the performance gaps statistically significant.
+> Under full-dataset training, the quantum-inspired evolutionary optimization (QIEO) algorithm successfully converges to higher-performing feature subsets and hyperparameters, yielding statistically significant performance gains.
 
 ---
 
