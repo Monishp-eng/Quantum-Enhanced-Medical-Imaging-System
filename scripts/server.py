@@ -124,7 +124,7 @@ class APIServer(SimpleHTTPRequestHandler):
                 rgb_tensor = img_tensor.repeat(1, 3, 1, 1)
                 
                 gradcam = GradCAM(cnn_model, target_layer_name="base.7")
-                gradcam_map = gradcam.generate(rgb_tensor, target_class=pred_idx)
+                gradcam_map, _ = gradcam.generate(rgb_tensor, target_class=pred_idx)
                 
                 saliency = VanillaSaliency(cnn_model)
                 saliency_map, _ = saliency.generate(rgb_tensor, target_class=pred_idx)
