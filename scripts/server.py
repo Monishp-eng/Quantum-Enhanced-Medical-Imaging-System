@@ -46,7 +46,32 @@ class APIServer(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/':
             self.path = '/gui/index.html'
-        return super().do_GET()
+            return super().do_GET()
+        elif self.path == '/api/random_test':
+            # Select random raw test scan and return its Base64 string
+            raw_images = glob.glob(os.path.join("data", "raw", "*", "*", "*.*"))
+            if not raw_images:
+                self.send_response(404)
+                self.end_headers()
+                return
+                
+            selected_path = random.choice(raw_images)
+            actual_label = os.path.basename(os.path.dirname(selected_path))
+            
+            with open(selected_path, "rb") as f:
+                encoded_string = base64.b64encode(f.read()).decode('utf-8')
+                
+            response = {
+                "success": True,
+                "label": actual_label.upper(),
+                "image": f"data:image/jpeg;base64,{encoded_string}"
+            }
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(response).encode('utf-8'))
+        else:
+            return super().do_GET()
 
     def end_headers(self):
         # Allow CORS
@@ -138,8 +163,8 @@ class APIServer(SimpleHTTPRequestHandler):
                     "success": True,
                     "prediction": pred_label.upper(),
                     "confidence": {CLASS_NAMES[i]: probs[i] for i in range(4)},
-                    "preprocessed_url": "/temp/preprocessed.jpg",
-                    "explainability_url": "/temp/explain.png"
+                    "preprocessed_url": "/gui/temp/preprocessed.jpg",
+                    "explainability_url": "/gui/temp/explain.png"
                 }
             except Exception as e:
                 import traceback
@@ -154,29 +179,6 @@ class APIServer(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(response).encode('utf-8'))
             
-        elif self.path == '/api/random_test':
-            # Select random raw test scan and return its Base64 string
-            raw_images = glob.glob(os.path.join("data", "raw", "*", "*", "*.*"))
-            if not raw_images:
-                self.send_response(404)
-                self.end_headers()
-                return
-                
-            selected_path = random.choice(raw_images)
-            actual_label = os.path.basename(os.path.dirname(selected_path))
-            
-            with open(selected_path, "rb") as f:
-                encoded_string = base64.b64encode(f.read()).decode('utf-8')
-                
-            response = {
-                "success": True,
-                "label": actual_label.upper(),
-                "image": f"data:image/jpeg;base64,{encoded_string}"
-            }
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps(response).encode('utf-8'))
         else:
             self.send_response(404)
             self.end_headers()
