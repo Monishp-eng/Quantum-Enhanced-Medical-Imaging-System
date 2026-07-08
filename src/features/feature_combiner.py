@@ -20,17 +20,13 @@ class FeatureCombiner:
         # 1. Extract CNN features (B, 2048)
         cnn_feats = self.cnn_extractor.extract(images_tensor)
         
-        # 2. Extract Handcrafted features for each image in the batch (B, 98)
+        # 2. Extract Handcrafted features for each image in the batch (B, 98) in parallel
         # Convert images back to numpy for handcrafted extraction
         images_np = images_tensor.cpu().numpy()
-        handcrafted_feats_list = []
-        
-        for i in range(batch_size):
-            # images_np[i] shape: (1, 224, 224)
-            img = images_np[i, 0] # Extract the grayscale slice (224, 224)
-            h_feats = extract_all_handcrafted(img)
-            handcrafted_feats_list.append(h_feats)
-            
+        from joblib import Parallel, delayed
+        handcrafted_feats_list = Parallel(n_jobs=-1, prefer="threads")(
+            delayed(extract_all_handcrafted)(images_np[i, 0]) for i in range(batch_size)
+        )
         handcrafted_feats = np.stack(handcrafted_feats_list, axis=0)
         
         # 3. Concatenate CNN and Handcrafted features -> (B, 2146)
@@ -85,5 +81,29 @@ class FeatureCombiner:
         np.save(os.path.join(save_dir, "X_test.npy"), X_test_scaled)
         np.save(os.path.join(save_dir, "y_test.npy"), y_test)
         
-        print(f"Features saved successfully to {save_dir}")
+        # Save scaler for inference deployment
+        import pickle
+        scaler_path = os.path.join(save_dir, "scaler.pkl")
+        with open(scaler_path, "wb") as f:
+            pickle.dump(self.scaler, f)
+        
+        print(f"Features and scaler saved successfully to {save_dir}")
         print(f"Feature matrix dimensions: {X_train_scaled.shape}")
+
+
+def extract_and_combine_features(train_loader, test_loader, save_dir):
+    """
+    Notebook compatibility wrapper.
+    Instantiates FeatureCombiner, processes train and test loaders, and returns the matrices.
+    """
+    import os
+    combiner = FeatureCombiner()
+    # We pass test_loader for validation split to satisfy the three-split loader requirements
+    combiner.process_and_save(train_loader, test_loader, test_loader, save_dir)
+    
+    X_train = np.load(os.path.join(save_dir, "X_train.npy"))
+    y_train = np.load(os.path.join(save_dir, "y_train.npy"))
+    X_test = np.load(os.path.join(save_dir, "X_test.npy"))
+    y_test = np.load(os.path.join(save_dir, "y_test.npy"))
+    return X_train, y_train, X_test, y_test
+
