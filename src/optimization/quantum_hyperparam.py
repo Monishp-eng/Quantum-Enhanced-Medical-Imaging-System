@@ -36,7 +36,18 @@ def run_quantum_hyperparam_opt(X_train, y_train, max_iter=10, pop_size=8, save_d
     Solves continuous hyperparameter optimization by mapping parameters to a binary search space.
     """
     print(f"\nStarting QIEO Hyperparameter Optimization for XGBoost...")
-    
+
+    # For speed on CPU, if n_samples > 1500, use a stratified subset of 1500 samples for fitness evaluations.
+    # The final model will still be trained on the full training set.
+    if X_train.shape[0] > 1500:
+        from sklearn.model_selection import train_test_split
+        _, X_eval, _, y_eval = train_test_split(
+            X_train, y_train, test_size=1500, stratify=y_train, random_state=42
+        )
+        print(f"Using a stratified subset of {X_eval.shape[0]} samples for fast QIEO evaluations.")
+    else:
+        X_eval, y_eval = X_train, y_train
+
     # 7 parameters * 8 bits = 56 bits
     n_bits = 56
     
@@ -54,7 +65,7 @@ def run_quantum_hyperparam_opt(X_train, y_train, max_iter=10, pop_size=8, save_d
         
         # 3-fold CV for speed
         try:
-            score = cross_val_score(clf, X_train, y_train, cv=3, scoring='accuracy', n_jobs=-1).mean()
+            score = cross_val_score(clf, X_eval, y_eval, cv=3, scoring='accuracy', n_jobs=1).mean()
         except Exception as e:
             score = 0.0
         return score

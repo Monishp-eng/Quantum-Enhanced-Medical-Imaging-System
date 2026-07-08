@@ -12,10 +12,21 @@ def run_quantum_feature_selection(X_train, y_train, max_iter=15, pop_size=10, sa
     """
     n_features = X_train.shape[1]
     print(f"\nStarting QIEO Feature Selection for {n_features} features...")
-    
+
+    # For speed on CPU, if n_samples > 1000, use a stratified subset of 1000 samples for fitness evaluations.
+    # The final SVM model will still be trained on the full training set.
+    if X_train.shape[0] > 1000:
+        from sklearn.model_selection import train_test_split
+        _, X_eval, _, y_eval = train_test_split(
+            X_train, y_train, test_size=1000, stratify=y_train, random_state=42
+        )
+        print(f"Using a stratified subset of {X_eval.shape[0]} samples for fast QIEO evaluations.")
+    else:
+        X_eval, y_eval = X_train, y_train
+
     # Use a fast classifier for feature selection CV to keep runtimes reasonable
     # LinearSVC is much faster than RBF SVC or XGBoost for 2000+ features
-    clf = LinearSVC(random_state=42, dual=False, max_iter=1000)
+    clf = LinearSVC(random_state=42, dual='auto', max_iter=500)
     
     def objective_function(mask):
         # Ensure at least 1 feature is selected
@@ -23,11 +34,11 @@ def run_quantum_feature_selection(X_train, y_train, max_iter=15, pop_size=10, sa
             return -1.0
             
         selected_features = np.where(mask == 1)[0]
-        X_subset = X_train[:, selected_features]
+        X_subset = X_eval[:, selected_features]
         
         # 3-fold stratified CV for evaluation
         try:
-            cv_acc = cross_val_score(clf, X_subset, y_train, cv=3, scoring='accuracy', n_jobs=-1).mean()
+            cv_acc = cross_val_score(clf, X_subset, y_eval, cv=3, scoring='accuracy', n_jobs=1).mean()
         except Exception as e:
             cv_acc = 0.0
             

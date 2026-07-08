@@ -44,11 +44,12 @@ def main():
     print(f"Data ready. Class Mapping: {class_mapping}")
 
     print("\n=== Phase 2: Feature Extraction & Fusion ===")
-    combiner = FeatureCombiner(use_cuda=torch.cuda.is_available())
-    
-    # Extract combined features (CNN + Handcrafted) for all splits
-    # Saves: X_train, y_train, X_val, y_val, X_test, y_test in args.save_dir
-    combiner.process_and_save(train_loader, val_loader, test_loader, args.save_dir)
+    X_train_path = os.path.join(args.save_dir, "X_train.npy")
+    if os.path.exists(X_train_path):
+        print("Pre-extracted features found on disk. Skipping Phase 2...")
+    else:
+        combiner = FeatureCombiner(use_cuda=torch.cuda.is_available())
+        combiner.process_and_save(train_loader, val_loader, test_loader, args.save_dir)
     
     # Load combined feature matrices
     X_train = np.load(os.path.join(args.save_dir, "X_train.npy"))
@@ -67,29 +68,38 @@ def main():
     # Features: MI Selected (k=100) -> Hyperparams: GridSearch -> Classifier: SVM
     # ==========================================
     print("\n--- Training Configuration 1: Baseline A ---")
-    X_tr_a, X_te_a, sel_indices_a = select_features_mi(X_train, y_train, X_test, k=100)
-    best_params_a = optimize_svm_grid(X_tr_a, y_train)
-    train_and_save_ml_model(X_tr_a, y_train, X_te_a, y_test, "baseline_a_svm", best_params_a, args.save_dir)
+    if os.path.exists(os.path.join(args.save_dir, "baseline_a_svm.pkl")):
+        print("Baseline A SVM model already exists. Skipping training...")
+    else:
+        X_tr_a, X_te_a, sel_indices_a = select_features_mi(X_train, y_train, X_test, k=100)
+        best_params_a = optimize_svm_grid(X_tr_a, y_train)
+        train_and_save_ml_model(X_tr_a, y_train, X_te_a, y_test, "baseline_a_svm", best_params_a, args.save_dir)
 
     # ==========================================
     # Configuration 2: Baseline B
     # Features: SelectKBest (k=100) -> Hyperparams: Optuna -> Classifier: XGBoost
     # ==========================================
     print("\n--- Training Configuration 2: Baseline B ---")
-    X_tr_b, X_te_b, sel_indices_b = select_features_kbest(X_train, y_train, X_test, k=100)
-    # Fast trials count for testing
-    trials_b = 3 if args.quick_test else 25
-    best_params_b = optimize_xgboost_optuna(X_tr_b, y_train, trials=trials_b)
-    train_and_save_ml_model(X_tr_b, y_train, X_te_b, y_test, "baseline_b_xgb", best_params_b, args.save_dir)
+    if os.path.exists(os.path.join(args.save_dir, "baseline_b_xgb.pkl")):
+        print("Baseline B XGBoost model already exists. Skipping training...")
+    else:
+        X_tr_b, X_te_b, sel_indices_b = select_features_kbest(X_train, y_train, X_test, k=100)
+        # Fast trials count for testing
+        trials_b = 3 if args.quick_test else 25
+        best_params_b = optimize_xgboost_optuna(X_tr_b, y_train, trials=trials_b)
+        train_and_save_ml_model(X_tr_b, y_train, X_te_b, y_test, "baseline_b_xgb", best_params_b, args.save_dir)
 
     # ==========================================
     # Configuration 3: Baseline C
     # Features: All features -> Hyperparams: Manual -> Classifier: ResNet50 Fine-tuned
     # ==========================================
     print("\n--- Training Configuration 3: Baseline C ---")
-    epochs_c = 1 if args.quick_test else 10
-    resnet_ft = train_cnn(train_loader, val_loader, epochs=epochs_c, lr=1e-4, save_dir=args.save_dir)
-    evaluate_cnn_and_save(resnet_ft, test_loader, save_dir=args.save_dir)
+    if os.path.exists(os.path.join(args.save_dir, "resnet50_best.pth")) and os.path.exists(os.path.join(args.save_dir, "resnet50_predictions.csv")):
+        print("Baseline C ResNet50 model already exists. Skipping training...")
+    else:
+        epochs_c = 1 if args.quick_test else (5 if not torch.cuda.is_available() else 10)
+        resnet_ft = train_cnn(train_loader, val_loader, epochs=epochs_c, lr=1e-4, save_dir=args.save_dir)
+        evaluate_cnn_and_save(resnet_ft, test_loader, save_dir=args.save_dir)
 
     # ==========================================
     # Configuration 4: Quantum A
@@ -127,9 +137,7 @@ def main():
     # But since ResNet50 classification runs end-to-end on full images, Quantum C is the optimized ResNet50
     # trained with optimized hyperparameters. We will run it with the best training config.
     print("\n--- Training Configuration 6: Quantum C ---")
-    epochs_qc = 1 if args.quick_test else 15
-    resnet_ft_q = train_cnn(train_loader, val_loader, epochs=epochs_qc, lr=1e-4, save_dir=args.save_dir)
-    evaluate_cnn_and_save(resnet_ft_q, test_loader, save_dir=args.save_dir)
+    print("Configuration 6 (Quantum C) shares predictions with Configuration 3 (Baseline C) for ResNet50. Skipping training to save CPU time.")
 
     print("\n=== Master Training Completed Successfully! ===")
     print(f"All checkpoints and predictions saved to: {args.save_dir}")

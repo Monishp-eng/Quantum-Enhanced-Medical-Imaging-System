@@ -43,7 +43,7 @@ def optimize_xgboost_optuna(X_train, y_train, trials=25): # Default 25 to run qu
         )
         
         # 3-fold CV for speed
-        score = cross_val_score(clf, X_train, y_train, cv=3, scoring='accuracy', n_jobs=-1).mean()
+        score = cross_val_score(clf, X_train, y_train, cv=3, scoring='accuracy', n_jobs=1).mean()
         return score
 
     study = optuna.create_study(direction='maximize')
