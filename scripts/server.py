@@ -130,12 +130,8 @@ class APIServer(SimpleHTTPRequestHandler):
                 elif "baseline" in model_name:
                     scaled_feats = scaled_feats[:, :100] # SVM BaselineMI/SelectKBest default
                     
-                # 6. Load classifier and predict
+                # 6. Load classifier and compute probabilities
                 classifier = classifiers[model_name]
-                pred_idx = classifier.predict(scaled_feats)[0]
-                pred_label = CLASS_NAMES[pred_idx]
-                
-                # Compute probabilities
                 probs = [0.0, 0.0, 0.0, 0.0]
                 if hasattr(classifier, "predict_proba"):
                     probs = classifier.predict_proba(scaled_feats)[0].tolist()
@@ -143,6 +139,10 @@ class APIServer(SimpleHTTPRequestHandler):
                     scores = classifier.decision_function(scaled_feats)[0]
                     # Softmax scores
                     probs = (np.exp(scores) / np.sum(np.exp(scores))).tolist()
+                
+                # Predict class with highest probability to ensure UI consistency (resolves SVM Platt calibration mismatch)
+                pred_idx = int(np.argmax(probs))
+                pred_label = CLASS_NAMES[pred_idx]
                     
                 # 7. Generate explainability plots dynamically
                 # Expand image to 3 channels for PyTorch base forward pass
