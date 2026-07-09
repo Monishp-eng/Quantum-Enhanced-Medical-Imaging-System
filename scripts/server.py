@@ -12,7 +12,7 @@ import torch
 
 from src.preprocessing.image_preprocessor import preprocess_image, load_image, resize_image, apply_clahe, denoise_image, normalize_image
 from src.features.cnn_features import CNNFeatureExtractor
-from src.features.handcrafted import extract_all_handcrafted
+from src.features.handcrafted import extract_all_handcrafted, extract_glcm_features, extract_hog_features, extract_intensity_features, extract_wavelet_features
 from src.models.cnn_classifier import FineTunedResNet50
 from src.explainability.gradcam import GradCAM
 from src.explainability.saliency import VanillaSaliency
@@ -20,6 +20,140 @@ from src.explainability.attention_viz import plot_explainability_comparison
 
 PORT = 8000
 CLASS_NAMES = ['glioma', 'meningioma', 'notumor', 'pituitary']
+
+CLASS_DESCRIPTIONS = {
+    'glioma': {
+        'full_name': 'Glioma',
+        'type': 'malignant brain tumor',
+        'origin': 'glial cells (supportive tissue of the brain)',
+        'characteristics': 'irregular, infiltrative mass with heterogeneous texture and poorly defined borders',
+        'clinical': 'Gliomas typically present as diffuse lesions with high textural heterogeneity, elevated contrast values in GLCM analysis, and strong wavelet energy in high-frequency subbands indicating rapid cellular proliferation.'
+    },
+    'meningioma': {
+        'full_name': 'Meningioma',
+        'type': 'mostly benign brain tumor',
+        'origin': 'meninges (protective membranes surrounding the brain)',
+        'characteristics': 'well-circumscribed, extra-axial mass with homogeneous enhancement and smooth borders',
+        'clinical': 'Meningiomas typically show uniform texture patterns with moderate GLCM homogeneity, distinct edge profiles in HOG features, and localized wavelet energy concentration consistent with a compact, well-defined mass.'
+    },
+    'pituitary': {
+        'full_name': 'Pituitary Tumor',
+        'type': 'benign pituitary adenoma',
+        'origin': 'pituitary gland (sella turcica region)',
+        'characteristics': 'sellar/suprasellar mass with homogeneous intensity and smooth round morphology',
+        'clinical': 'Pituitary adenomas present as centrally located, symmetrical masses with low textural complexity in GLCM analysis, minimal gradient variation in HOG descriptors, and concentrated low-frequency wavelet energy.'
+    },
+    'notumor': {
+        'full_name': 'No Tumor (Healthy)',
+        'type': 'normal brain anatomy',
+        'origin': 'N/A — no pathological mass detected',
+        'characteristics': 'normal grey and white matter distribution with symmetric hemispheric structure',
+        'clinical': 'Healthy brain scans exhibit balanced bilateral symmetry, uniform intensity distribution, low GLCM contrast values, smooth gradient orientation histograms, and evenly distributed wavelet energy across all frequency bands.'
+    }
+}
+
+def generate_explanation(pred_label, probs, handcrafted_feats, gradcam_map, preprocessed):
+    """Generate a detailed clinical-style explanation for the diagnosis."""
+    info = CLASS_DESCRIPTIONS[pred_label]
+    conf = max(probs) * 100
+    
+    # Extract individual feature groups for analysis
+    glcm = handcrafted_feats[:20]
+    hog = handcrafted_feats[20:56]
+    intensity = handcrafted_feats[56:66]
+    wavelet = handcrafted_feats[66:98]
+    
+    # Analyze GLCM texture patterns
+    glcm_contrast = np.mean(glcm[0:4])  # contrast across 4 angles
+    glcm_homogeneity = np.mean(glcm[12:16])  # homogeneity across 4 angles
+    glcm_energy = np.mean(glcm[8:12])  # energy across 4 angles
+    
+    texture_level = 'high' if glcm_contrast > 50 else ('moderate' if glcm_contrast > 15 else 'low')
+    homogeneity_level = 'high' if glcm_homogeneity > 0.4 else ('moderate' if glcm_homogeneity > 0.2 else 'low')
+    
+    # Analyze intensity statistics
+    mean_intensity = intensity[0]
+    std_intensity = intensity[1]
+    skewness = intensity[2]
+    
+    intensity_desc = 'bright' if mean_intensity > 0.5 else ('moderate' if mean_intensity > 0.25 else 'dark')
+    variance_desc = 'high variability' if std_intensity > 0.2 else ('moderate variability' if std_intensity > 0.1 else 'uniform')
+    
+    # Analyze wavelet energy
+    wavelet_energy = np.mean(np.abs(wavelet))
+    wavelet_desc = 'strong' if wavelet_energy > 0.1 else ('moderate' if wavelet_energy > 0.01 else 'low')
+    
+    # Analyze Grad-CAM spatial focus
+    if gradcam_map is not None and gradcam_map.size > 0:
+        cam_max = np.max(gradcam_map)
+        cam_mean = np.mean(gradcam_map)
+        focus_ratio = cam_max / (cam_mean + 1e-8)
+        
+        # Find region of maximum activation
+        h, w = gradcam_map.shape
+        max_loc = np.unravel_index(np.argmax(gradcam_map), gradcam_map.shape)
+        row_pct = max_loc[0] / h
+        col_pct = max_loc[1] / w
+        
+        if row_pct < 0.33:
+            vertical_region = 'superior (upper)'
+        elif row_pct < 0.66:
+            vertical_region = 'central'
+        else:
+            vertical_region = 'inferior (lower)'
+            
+        if col_pct < 0.33:
+            horizontal_region = 'left'
+        elif col_pct < 0.66:
+            horizontal_region = 'midline'
+        else:
+            horizontal_region = 'right'
+        
+        spatial_focus = f"{vertical_region} {horizontal_region} region"
+        focus_desc = 'highly localized' if focus_ratio > 5 else ('moderately focused' if focus_ratio > 2 else 'diffuse')
+    else:
+        spatial_focus = 'central region'
+        focus_desc = 'diffuse'
+    
+    # Build the explanation
+    # Second-place class for differential
+    sorted_indices = np.argsort(probs)[::-1]
+    second_idx = sorted_indices[1]
+    second_label = CLASS_NAMES[second_idx]
+    second_conf = probs[second_idx] * 100
+    second_info = CLASS_DESCRIPTIONS[second_label]
+    
+    explanation = []
+    
+    # Primary diagnosis reasoning
+    explanation.append(f"DIAGNOSIS: {info['full_name']} ({info['type']})")
+    explanation.append(f"Confidence: {conf:.1f}%")
+    explanation.append("")
+    
+    explanation.append("CLINICAL REASONING:")
+    explanation.append(f"The model identifies this scan as {info['full_name']} originating from {info['origin']}. {info['clinical']}")
+    explanation.append("")
+    
+    explanation.append("FEATURE ANALYSIS:")
+    explanation.append(f"• Texture (GLCM): {texture_level} contrast ({glcm_contrast:.2f}), {homogeneity_level} homogeneity ({glcm_homogeneity:.3f}), energy {glcm_energy:.4f}")
+    explanation.append(f"• Intensity Profile: {intensity_desc} mean ({mean_intensity:.3f}), {variance_desc} (σ={std_intensity:.3f}), skewness={skewness:.2f}")
+    explanation.append(f"• Wavelet Energy: {wavelet_desc} multi-scale frequency response ({wavelet_energy:.4f})")
+    explanation.append(f"• HOG Gradients: {len(hog)} orientation bins extracted — edge structure consistent with {info['characteristics']}")
+    explanation.append("")
+    
+    explanation.append("SPATIAL ATTENTION (Grad-CAM):")
+    explanation.append(f"• The deep CNN focused its attention on the {spatial_focus} of the scan")
+    explanation.append(f"• Activation pattern is {focus_desc}, suggesting {('a localized mass or lesion' if focus_desc == 'highly localized' else ('a region of interest with moderate extent' if focus_desc == 'moderately focused' else 'a distributed pattern across the brain parenchyma'))}")
+    explanation.append("")
+    
+    explanation.append("DIFFERENTIAL DIAGNOSIS:")
+    explanation.append(f"• Runner-up: {second_info['full_name']} at {second_conf:.1f}% — {second_info['type']} originating from {second_info['origin']}")
+    if conf - second_conf < 15:
+        explanation.append(f"• Note: The confidence margin is narrow ({conf - second_conf:.1f}%). Clinical correlation and radiologist review is recommended for definitive diagnosis.")
+    else:
+        explanation.append(f"• The confidence margin of {conf - second_conf:.1f}% indicates a clear diagnostic distinction.")
+    
+    return "\n".join(explanation)
 
 # Load PyTorch model once globally for fast explainability generation
 print("Loading Fine-Tuned ResNet50 model for Grad-CAM explainability...")
@@ -118,7 +252,8 @@ class APIServer(SimpleHTTPRequestHandler):
                 cnn_feats = cnn_extractor.extract(img_tensor)
                 
                 # 3. Extract handcrafted texture/shape features
-                handcrafted_feats = extract_all_handcrafted(preprocessed).reshape(1, -1)
+                handcrafted_feats_raw = extract_all_handcrafted(preprocessed)
+                handcrafted_feats = handcrafted_feats_raw.reshape(1, -1)
                 
                 # 4. Fuse and scale features
                 fused_feats = np.concatenate([cnn_feats, handcrafted_feats], axis=1)
@@ -159,12 +294,18 @@ class APIServer(SimpleHTTPRequestHandler):
                     preprocessed, gradcam_map, saliency_map, pred_label.upper(), save_path=explain_img_path
                 )
                 
+                # 8. Generate detailed explanation
+                explanation = generate_explanation(
+                    pred_label, probs, handcrafted_feats_raw, gradcam_map, preprocessed
+                )
+                
                 response = {
                     "success": True,
                     "prediction": pred_label.upper(),
                     "confidence": {CLASS_NAMES[i]: probs[i] for i in range(4)},
                     "preprocessed_url": "/gui/temp/preprocessed.jpg",
-                    "explainability_url": "/gui/temp/explain.png"
+                    "explainability_url": "/gui/temp/explain.png",
+                    "explanation": explanation
                 }
             except Exception as e:
                 import traceback

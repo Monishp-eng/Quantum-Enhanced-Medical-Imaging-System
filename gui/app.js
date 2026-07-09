@@ -172,6 +172,39 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 });
                 
+                // Render diagnostic explanation
+                if (data.explanation) {
+                    const explainSection = document.getElementById("explanation-section");
+                    const explainContent = document.getElementById("explanation-content");
+                    
+                    // Parse explanation text into styled HTML
+                    const lines = data.explanation.split("\n");
+                    let html = "";
+                    for (const line of lines) {
+                        if (line.startsWith("DIAGNOSIS:")) {
+                            html += `<div class="explain-diagnosis">${line}</div>`;
+                        } else if (line.startsWith("Confidence:")) {
+                            html += `<div class="explain-confidence">${line}</div>`;
+                        } else if (line.endsWith(":") || line.startsWith("CLINICAL") || line.startsWith("FEATURE") || line.startsWith("SPATIAL") || line.startsWith("DIFFERENTIAL")) {
+                            html += `<div class="explain-heading">${line}</div>`;
+                        } else if (line.startsWith("•")) {
+                            const isWarning = line.includes("Note:") || line.includes("narrow");
+                            html += `<div class="explain-bullet ${isWarning ? 'explain-warning' : ''}">${line}</div>`;
+                        } else if (line.trim() === "") {
+                            html += `<br/>`;
+                        } else {
+                            html += `<div>${line}</div>`;
+                        }
+                    }
+                    
+                    explainContent.innerHTML = html;
+                    explainSection.style.display = "block";
+                    // Re-trigger animation
+                    explainSection.style.animation = "none";
+                    explainSection.offsetHeight; // force reflow
+                    explainSection.style.animation = "slideIn 0.4s ease";
+                }
+                
             } else {
                 alert("Diagnostic pipeline error: " + data.error);
             }

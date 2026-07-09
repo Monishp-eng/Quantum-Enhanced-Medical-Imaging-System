@@ -511,6 +511,94 @@ body {
 .fill-pituitary { background: var(--accent-pituitary); }
 .fill-notumor { background: var(--accent-notumor); }
 
+/* Diagnostic Explanation Panel */
+.explanation-section {
+    background: rgba(10, 12, 16, 0.5);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 24px;
+    animation: slideIn 0.4s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.explanation-section h3 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--primary-color);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.explanation-content {
+    font-family: 'Plus Jakarta Sans', monospace;
+    font-size: 12px;
+    line-height: 1.75;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 320px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(123, 97, 255, 0.3) transparent;
+}
+
+.explanation-content::-webkit-scrollbar {
+    width: 5px;
+}
+
+.explanation-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.explanation-content::-webkit-scrollbar-thumb {
+    background: rgba(123, 97, 255, 0.3);
+    border-radius: 9999px;
+}
+
+.explanation-content .explain-heading {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 12.5px;
+    margin-top: 6px;
+    margin-bottom: 2px;
+    letter-spacing: 0.3px;
+}
+
+.explanation-content .explain-diagnosis {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--primary-color);
+    margin-bottom: 2px;
+}
+
+.explanation-content .explain-confidence {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+.explanation-content .explain-bullet {
+    padding-left: 6px;
+}
+
+.explanation-content .explain-warning {
+    color: var(--warning-color);
+    font-weight: 600;
+}
+
 .metrics-summary h3 {
     font-size: 13px;
     text-transform: uppercase;
