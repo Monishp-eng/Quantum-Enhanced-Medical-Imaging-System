@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="QT-2.21 Diagnostics - Performance Evaluation Report.">
+    <title>Performance Evaluation Report - QT-2.21</title>
+    
+    <!-- Modern Typography & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-main: #0a0c10;
+            --bg-grad: radial-gradient(circle at 50% 10%, #161a29, #080a0f);
+            --card-bg: rgba(18, 22, 33, 0.65);
+            --card-border: rgba(255, 255, 255, 0.06);
+            --card-hover-border: rgba(123, 97, 255, 0.25);
+            
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            
+            --primary-color: #7b61ff;
+            --primary-grad: linear-gradient(135deg, #8b5cf6, #3b82f6);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            
+            --font-title: 'Outfit', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+            
+            --accent-glioma: #f43f5e;
+            --accent-meningioma: #f59e0b;
+            --accent-pituitary: #8b5cf6;
+            --accent-notumor: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg-main);
+            background-image: var(--bg-grad);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            padding: 24px;
+            opacity: 0;
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Header */
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo i {
+            font-size: 32px;
+            background: var(--primary-grad);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand h1 {
+            font-family: var(--font-title);
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .brand span {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: rgba(123, 97, 255, 0.08);
+            border: 1px solid rgba(123, 97, 255, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .back-link:hover {
+            background: rgba(123, 97, 255, 0.15);
+            transform: translateX(-4px);
+        }
+
+        /* Cards styling */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .section-title {
+            font-family: var(--font-title);
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+        }
+
+        .section-title i {
+            color: var(--primary-color);
+        }
+
+        /* Summary Metrics Table */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 14px 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--card-border);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--card-border);
+            color: var(--text-primary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .quantum-row {
+            position: relative;
+        }
+
+        .quantum-row td:first-child {
+            border-left: 3px solid var(--primary-color);
+            padding-left: 13px;
+        }
+
+        .best-val {
+            font-weight: 700;
+            color: var(--success-color);
+        }
+
+        /* Metrics Grids */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .mini-card {
+            background: rgba(10, 12, 16, 0.4);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .mini-card.glioma { border-top: 3px solid var(--accent-glioma); }
+        .mini-card.meningioma { border-top: 3px solid var(--accent-meningioma); }
+        .mini-card.pituitary { border-top: 3px solid var(--accent-pituitary); }
+        .mini-card.notumor { border-top: 3px solid var(--accent-notumor); }
+
+        .mini-card-lbl {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .mini-card-val {
+            font-family: var(--font-title);
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .glioma .mini-card-val { color: var(--accent-glioma); }
+        .meningioma .mini-card-val { color: var(--accent-meningioma); }
+        .pituitary .mini-card-val { color: var(--accent-pituitary); }
+        .notumor .mini-card-val { color: var(--accent-notumor); }
+
+        /* Multi Column Results */
+        .results-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .results-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Statistical significance / Improvements list */
+        .details-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .details-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 13.5px;
+        }
+
+        .badge-sig {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: var(--success-color);
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .badge-nonsig {
+            background: rgba(107, 114, 128, 0.08);
+            border: 1px solid rgba(107, 114, 128, 0.2);
+            color: var(--text-secondary);
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .val-improve {
+            color: var(--success-color);
+            font-weight: 700;
+        }
+
+        /* Confusion Matrix Grid */
+        .cm-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .cm-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .cm-card {
+            background: rgba(10, 12, 16, 0.5);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .cm-card-header {
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--card-border);
+            padding: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .cm-img-wrapper {
+            background: #050608;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cm-img-wrapper img {
+            width: 100%;
+            height: auto;
+            max-width: 320px;
+            display: block;
+            border-radius: 8px;
+        }
+
+        /* Footer */
+        .main-footer {
+            text-align: center;
+            padding: 24px 0;
+            border-top: 1px solid var(--card-border);
+            font-size: 12px;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- Header -->
+        <header class="main-header">
+            <div class="logo">
+                <i class="fa-solid fa-atom"></i>
+                <div class="brand">
+                    <h1>QT-2.21 Diagnostics</h1>
+                    <span>Model Performance Evaluation</span>
+                </div>
+            </div>
+            <a href="/" class="back-link">
+                <i class="fa-solid fa-chevron-left"></i> Back to Dashboard
+            </a>
+        </header>
+
+        <!-- Summary Metrics Table -->
+        <section class="glass-card">
+            <h2 class="section-title"><i class="fa-solid fa-table"></i> Comparative Metrics Matrix</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Model Configuration</th>
+                            <th>Accuracy</th>
+                            <th>Sensitivity</th>
+                            <th>Specificity</th>
+                            <th>Precision</th>
+                            <th>Recall</th>
+                            <th>F1-Macro</th>
+                            <th>AUC-ROC</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Baseline A (MI + SVM)</td>
+                            <td>87.00%</td>
+                            <td>87.00%</td>
+                            <td>95.67%</td>
+                            <td>87.48%</td>
+                            <td>87.00%</td>
+                            <td>86.99%</td>
+                            <td>97.59%</td>
+                        </tr>
+                        <tr>
+                            <td>Baseline B (KBest + XGBoost)</td>
+                            <td>87.00%</td>
+                            <td>87.00%</td>
+                            <td>95.67%</td>
+                            <td>87.17%</td>
+                            <td>87.00%</td>
+                            <td>86.96%</td>
+                            <td>97.46%</td>
+                        </tr>
+                        <tr>
+                            <td>Baseline C (ResNet-50 CNN)</td>
+                            <td class="best-val">95.33%</td>
+                            <td class="best-val">95.33%</td>
+                            <td class="best-val">98.44%</td>
+                            <td class="best-val">95.46%</td>
+                            <td class="best-val">95.33%</td>
+                            <td class="best-val">95.34%</td>
+                            <td class="best-val">99.41%</td>
+                        </tr>
+                        <tr class="quantum-row">
+                            <td>Quantum A (QIEO + SVM)</td>
+                            <td>89.84%</td>
+                            <td>89.84%</td>
+                            <td>96.61%</td>
+                            <td>89.98%</td>
+                            <td>89.84%</td>
+                            <td>89.83%</td>
+                            <td>98.62%</td>
+                        </tr>
+                        <tr class="quantum-row">
+                            <td>Quantum B (QIEO + XGBoost)</td>
+                            <td>89.29%</td>
+                            <td>89.29%</td>
+                            <td>96.43%</td>
+                            <td>89.50%</td>
+                            <td>89.29%</td>
+                            <td>89.28%</td>
+                            <td>97.99%</td>
+                        </tr>
+                        <tr class="quantum-row">
+                            <td>Quantum C (QIEO + CNN)</td>
+                            <td class="best-val">95.33%</td>
+                            <td class="best-val">95.33%</td>
+                            <td class="best-val">98.44%</td>
+                            <td class="best-val">95.46%</td>
+                            <td class="best-val">95.33%</td>
+                            <td class="best-val">95.34%</td>
+                            <td class="best-val">99.41%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Per-Class Metrics grids (Quantum A) -->
+        <section class="glass-card">
+            <h2 class="section-title"><i class="fa-solid fa-chart-bar"></i> Per-Class Sensitivity Breakdown (Quantum A)</h2>
+            <div class="metrics-grid">
+                <div class="mini-card glioma">
+                    <span class="mini-card-lbl">Glioma Sensitivity</span>
+                    <span class="mini-card-val">82.78%</span>
+                </div>
+                <div class="mini-card meningioma">
+                    <span class="mini-card-lbl">Meningioma Sensitivity</span>
+                    <span class="mini-card-val">86.81%</span>
+                </div>
+                <div class="mini-card pituitary">
+                    <span class="mini-card-lbl">Pituitary Tumor Sensitivity</span>
+                    <span class="mini-card-val">95.24%</span>
+                </div>
+                <div class="mini-card notumor">
+                    <span class="mini-card-lbl">No Tumor Sensitivity</span>
+                    <span class="mini-card-val">94.51%</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="glass-card">
+            <h2 class="section-title"><i class="fa-solid fa-chart-line"></i> Per-Class AUC-ROC Breakdown (Quantum A)</h2>
+            <div class="metrics-grid">
+                <div class="mini-card glioma">
+                    <span class="mini-card-lbl">Glioma AUC-ROC</span>
+                    <span class="mini-card-val">97.79%</span>
+                </div>
+                <div class="mini-card meningioma">
+                    <span class="mini-card-lbl">Meningioma AUC-ROC</span>
+                    <span class="mini-card-val">97.54%</span>
+                </div>
+                <div class="mini-card pituitary">
+                    <span class="mini-card-lbl">Pituitary Tumor AUC-ROC</span>
+                    <span class="mini-card-val">99.52%</span>
+                </div>
+                <div class="mini-card notumor">
+                    <span class="mini-card-lbl">No Tumor AUC-ROC</span>
+                    <span class="mini-card-val">99.62%</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Statistical Analysis & Improvements -->
+        <div class="results-row">
+            <section class="glass-card">
+                <h2 class="section-title"><i class="fa-solid fa-scale-balanced"></i> Statistical Significance (McNemar's Test)</h2>
+                <div class="details-list">
+                    <div class="details-item">
+                        <span>Baseline A vs. Quantum A</span>
+                        <span>stat = 8.41 | p = 0.0037</span>
+                        <span class="badge-sig">SIGNIFICANT (p &lt; 0.05)</span>
+                    </div>
+                    <div class="details-item">
+                        <span>Baseline B vs. Quantum B</span>
+                        <span>stat = 6.47 | p = 0.0110</span>
+                        <span class="badge-sig">SIGNIFICANT (p &lt; 0.05)</span>
+                    </div>
+                    <div class="details-item">
+                        <span>Baseline C vs. Quantum C</span>
+                        <span>stat = 0.00 | p = 1.0000</span>
+                        <span class="badge-nonsig">NOT SIGNIFICANT</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="glass-card">
+                <h2 class="section-title"><i class="fa-solid fa-arrow-up-right-dots"></i> QIEO Performance Improvement</h2>
+                <div class="details-list">
+                    <div class="details-item">
+                        <span>Quantum A vs. Baseline A (SVM)</span>
+                        <span>Accuracy: <span class="val-improve">+3.26%</span> | Sensitivity: <span class="val-improve">+3.26%</span> | F1-Score: <span class="val-improve">+3.27%</span></span>
+                    </div>
+                    <div class="details-item">
+                        <span>Quantum B vs. Baseline B (XGBoost)</span>
+                        <span>Accuracy: <span class="val-improve">+2.63%</span> | Sensitivity: <span class="val-improve">+2.63%</span> | F1-Score: <span class="val-improve">+2.66%</span></span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Confusion Matrices -->
+        <section class="glass-card">
+            <h2 class="section-title"><i class="fa-solid fa-chart-area"></i> Confusion Matrices Comparison (Test Set)</h2>
+            <div class="cm-grid">
+                <!-- Baseline A -->
+                <div class="cm-card">
+                    <div class="cm-card-header">Baseline A (MI + SVM)</div>
+                    <div class="cm-img-wrapper">
+                        <img src="/gui/temp/cm_baseline_a.png" alt="Baseline A Confusion Matrix">
+                    </div>
+                </div>
+                <!-- Baseline B -->
+                <div class="cm-card">
+                    <div class="cm-card-header">Baseline B (KBest + XGBoost)</div>
+                    <div class="cm-img-wrapper">
+                        <img src="/gui/temp/cm_baseline_b.png" alt="Baseline B Confusion Matrix">
+                    </div>
+                </div>
+                <!-- Baseline C -->
+                <div class="cm-card">
+                    <div class="cm-card-header">Baseline C (ResNet-50 CNN)</div>
+                    <div class="cm-img-wrapper">
+                        <img src="/gui/temp/cm_baseline_c.png" alt="Baseline C Confusion Matrix">
+                    </div>
+                </div>
+                <!-- Quantum A -->
+                <div class="cm-card">
+                    <div class="cm-card-header">Quantum A (QIEO + SVM)</div>
+                    <div class="cm-img-wrapper">
+                        <img src="/gui/temp/cm_quantum_a.png" alt="Quantum A Confusion Matrix">
+                    </div>
+                </div>
+                <!-- Quantum B -->
+                <div class="cm-card">
+                    <div class="cm-card-header">Quantum B (QIEO + XGBoost)</div>
+                    <div class="cm-img-wrapper">
+                        <img src="/gui/temp/cm_quantum_b.png" alt="Quantum B Confusion Matrix">
+                    </div>
+                </div>
+                <!-- Quantum C -->
+                <div class="cm-card">
+                    <div class="cm-card-header">Quantum C (QIEO + CNN)</div>
+                    <div class="cm-img-wrapper">
+                        <img src="/gui/temp/cm_quantum_c.png" alt="Quantum C Confusion Matrix">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="main-footer">
+            Report generated from test set evaluation (N = 1,054 samples, 4 classes) &bull; QT-2.21 Diagnostics &bull; 2026
+        </footer>
+    </div>
+</body>
+</html>

@@ -181,6 +181,9 @@ class APIServer(SimpleHTTPRequestHandler):
         if self.path == '/':
             self.path = '/gui/index.html'
             return super().do_GET()
+        elif self.path == '/evaluation':
+            self.path = '/gui/evaluation.html'
+            return super().do_GET()
         elif self.path == '/api/random_test':
             # Select random raw test scan and return its Base64 string
             raw_images = glob.glob(os.path.join("data", "raw", "*", "*", "*.*"))
