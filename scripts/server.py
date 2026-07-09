@@ -46,7 +46,7 @@ CLASS_DESCRIPTIONS = {
     'notumor': {
         'full_name': 'No Tumor (Healthy)',
         'type': 'normal brain anatomy',
-        'origin': 'N/A — no pathological mass detected',
+        'origin': 'healthy cerebral tissue with no detectable pathological mass',
         'characteristics': 'normal grey and white matter distribution with symmetric hemispheric structure',
         'clinical': 'Healthy brain scans exhibit balanced bilateral symmetry, uniform intensity distribution, low GLCM contrast values, smooth gradient orientation histograms, and evenly distributed wavelet energy across all frequency bands.'
     }
